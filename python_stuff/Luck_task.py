@@ -214,13 +214,12 @@ for j in range(num_blk): #start block
     win.flip() # flip the screen
     core.wait(iti) #pause    
 
-dict = {'labels':trls,'index':trial_index,'positions':pos_blk,'RT':RT_trl}
+dict_var = {'labels':trls,'index':trial_index,'positions':pos_blk,'RT':RT_trl}
 
 #save data of interest
 with open('data_file_pp_' + pp + '.pickle', 'wb') as write_file:
-    pickle.dump(dict, write_file,protocol=pickle.HIGHEST_PROTOCOL)
+    pickle.dump(dict_var, write_file,protocol=pickle.HIGHEST_PROTOCOL)
 
 #cleanup
 win.close() #close display
 core.quit()
-
