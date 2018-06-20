@@ -19,7 +19,7 @@ import pickle
 
 ############# functions #################
 # draw fixation cross function
-def draw_fixation(posit,lineSize,linecolor): 
+def draw_fixation(posit,lineSize,linecolor,linewidth): 
     
     t = lineSize/2.0
     vertical_line = visual.Line(win,start = (posit[0],posit[1]-t),end = (posit[0],posit[1]+t),lineColor = linecolor,lineWidth=linewidth)
@@ -129,11 +129,11 @@ for j in range(num_blk): #start block
     
     BlockText.draw()
     PressText.draw()
-    draw_fixation(fixpos,fixlineSize,fixcolor) #draw fixation 
+    draw_fixation(fixpos,fixlineSize,fixcolor,linewidth) #draw fixation 
     win.flip()
     event.waitKeys(keyList = 'space') 
 
-    draw_fixation(fixpos,fixlineSize,fixcolor) #draw fixation 
+    draw_fixation(fixpos,fixlineSize,fixcolor,linewidth) #draw fixation 
     win.flip() # flip the screen
     core.wait(2.0) #pause
     
@@ -189,7 +189,7 @@ for j in range(num_blk): #start block
                     blue_sqr.draw()
                     red_sqr.draw()          
         
-        draw_fixation(fixpos,fixlineSize,fixcolor) #draw fixation        
+        draw_fixation(fixpos,fixlineSize,fixcolor,linewidth) #draw fixation        
         win.flip() #flip the screen
         
         t0 = core.getTime() #get the time (seconds)
@@ -217,7 +217,7 @@ for j in range(num_blk): #start block
 dict_var = {'labels':trls,'index':trial_index,'positions':pos_blk,'RT':RT_trl}
 
 #save data of interest
-with open('data_file_pp_' + pp + '.pickle', 'wb') as write_file:
+with open('data_Luck_pp_' + pp + '.pickle', 'wb') as write_file:
     pickle.dump(dict_var, write_file,protocol=pickle.HIGHEST_PROTOCOL)
 
 #cleanup
