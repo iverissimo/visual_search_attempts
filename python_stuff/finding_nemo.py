@@ -15,13 +15,13 @@ Author: Ines V.
 Descrip: Try out script for simple visual search task
 """
 
-from psychopy import visual, core, event, monitors #import some libraries from PsychoPy
+from psychopy import visual, core, event #import some libraries from PsychoPy
 import numpy as np
-import random 
+#import random 
 import pickle
 import os
 import math
-import pyglet
+#import pyglet
 
 #######################################
 ### functions ###
@@ -52,12 +52,17 @@ def ang2pix(dist_in_deg,h,d,r):
     return dist_in_px 
 
 # determines list with random positions of x and y, taking into account the set size
-def rand_pos(pos_x,pos_y,set_size):
-    
-    combinations = [[a,b] for a in pos_x for b in pos_y]
-    poslist_xy = random.sample(combinations,set_size)
-    return poslist_xy
+def rand_pos2(pos_x,pos_y,set_size): #new version    
+    poslist_xy = np.empty((0,2)) 
 
+    for g in range(len(pos_x)):
+        pairs = np.append(pos_x[g],pos_y[g])
+        poslist_xy = np.append(poslist_xy,[pairs],axis=0)
+ 
+    np.random.shuffle(poslist_xy)
+
+    return poslist_xy[0:set_size]
+    
 
 ########## Initial parameters #########
 # paths to images
@@ -89,19 +94,15 @@ ecc_pix = np.array(tuple(ang2pix(ecc_deg,screenHeight,screenDis,vRes))) # eccent
 stim_time = 2.5 #stimulus presentation time (seconds)
 iti = 3.4 #inter-trial-interval (seconds)
 
-#########
+######### arrays to save data in pickle ############
 
 RT_trl = np.array(np.zeros((num_blk,num_trl)),object) #array for all RTs
-img_index = np.zeros((num_blk,num_trl),dtype=int) #array to save all indexes used
-
-
-set_idx = np.zeros((num_blk,num_trl),dtype=int) #array to save item indexes used
-trgt_idx = np.zeros((num_blk,num_trl),dtype=int) #array to save target/no target indexes used
+trial_index = np.zeros((num_blk,num_trl),dtype=int) #array to save all indexes used
 bckg_idx = np.zeros((num_blk,num_trl),dtype=int) #array to save background indexes used
-
 pos_trl = np.array(np.zeros((1,num_trl)),object) #array to save all positions used in trials of 1 block
 pos_blk = np.array(np.zeros((num_blk,num_trl)),object) #array to save all positions used in all blocks
-
+distr_idx_trl = np.array(np.zeros((1,num_trl)),object) #array to save all distractors used in trials of 1 block
+distr_idx_blk = np.array(np.zeros((num_blk,num_trl)),object) #array to save all distractors used in all blocks
     
 #######################################
     
@@ -187,8 +188,8 @@ for j in range(num_blk): #start block
         ecc_idx = np.where(ecc_deg == trls[1,trls_idx[i]]) #index for eccentricity
         ecc_idx = ecc_idx[0][0]
         
-        poslist_xy = rand_pos(poslist_x[ecc_idx],poslist_y[ecc_idx],int(trls[0,trls_idx[i]]))
-        
+        poslist_xy = rand_pos2(poslist_x[ecc_idx],poslist_y[ecc_idx],int(trls[0,trls_idx[i]]))
+                
         # define distractors to use in trial
         img_distr_idx = np.random.choice(num_distr-1, int(trls[0,trls_idx[i]]))
 
@@ -211,28 +212,40 @@ for j in range(num_blk): #start block
         
         t0 = core.getTime() #get the time (seconds)
         key = [] # reset key to nothing 
-           
-        while not key:
-            key = event.getKeys(keyList = ['space'])
-            if core.getTime()-t0 > stim_time:
-                break
+        RT = []
         
-        RT = core.getTime() - t0
-        
-        if RT > stim_time:
-            RT_trl[j][i] = float('nan') #if response takes longer than stim period, then put nan
+        while core.getTime()-t0 < stim_time: #keep display until stim time finishes
+            
+            while not key:
+                key = event.getKeys(keyList = ['space'])  
+                RT = core.getTime() - t0 # register RT
+                if core.getTime()-t0 > stim_time:
+                    break
+            
+        if RT > stim_time: #if response takes longer than stim period, then put nan
+            RT_trl[j][i] = float('nan') 
         else:
             RT_trl[j][i] = RT #else save actual RT
         
-    #img_index[j][i] = img_distr_idx # image index for all blocks and trials
+        pos_trl[0][i] = np.array(poslist_xy) #all positions in trial
+        distr_idx_trl[0][i] = np.array(img_distr_idx) #all distractors in trial
+        
+    pos_blk[j][:] = pos_trl # positions for all blocks and trials 
+    distr_idx_blk[j][:] = distr_idx_trl # distractors for all blocks and trials 
+    trial_index[j][:] = trls_idx #index for all blocks and trials
+    bckg_idx[j][:] = cur_bckg # backgrounds for all blocks and trials 
+
+    
     win.flip() # flip the screen
     core.wait(iti) #pause    
 
-#dict_var = {'RT':RT_trl,'indexes':img_index}
+dict_var = {'labels':trls,'trial_idx':trial_index,'distractor_idx':distr_idx_blk,
+            'positions':pos_blk,'RT':RT_trl,'background':bckg_idx}
+
 
 #save data of interest
-#with open('data_FNemo_pp_' + pp + '.pickle', 'wb') as write_file:
-#    pickle.dump(dict_var, write_file,protocol=pickle.HIGHEST_PROTOCOL)
+with open('data_FNemo_pp_' + pp + '.pickle', 'wb') as write_file:
+    pickle.dump(dict_var, write_file,protocol=pickle.HIGHEST_PROTOCOL)
 
 #cleanup
 win.close() #close display
